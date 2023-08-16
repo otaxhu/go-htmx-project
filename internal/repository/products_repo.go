@@ -11,7 +11,7 @@ import (
 	"github.com/otaxhu/go-htmx-project/settings"
 )
 
-//go:generate mockery --name ProductsRepository --structname MockProductsRepository
+//go:generate mockery --name ProductsRepository
 type ProductsRepository interface {
 	GetProducts(ctx context.Context, offset, limit uint) ([]models.Product, error)
 	GetProductById(ctx context.Context, id string) (models.Product, error)
