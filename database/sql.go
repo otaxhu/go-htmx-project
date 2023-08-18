@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/otaxhu/go-htmx-project/settings"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func GetSqlConnection(dbSettings settings.Database) (*sql.DB, error) {
