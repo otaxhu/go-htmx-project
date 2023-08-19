@@ -22,3 +22,6 @@ go.work
 
 # Sensible data (only for development)
 .env
+
+# CLI programs that I want git to follow
+!tailwind.exe
