@@ -6,18 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulario htmx</title>
     <script src="/static/js/htmx.org@1.9.4.min.js" defer></script>
+    <link rel="stylesheet" href="/static/css/tailwind.css">
 </head>
-<body>
-    <h1>Formulario htmx</h1>
+<body class="container text-center p-4 border-cyan-700 border mx-auto">
+    <nav class="flex bg-cyan-600 px-8 py-4">
+        <div class="flex-grow flex">
+            <span class="text-white">Logo</span>
+        </div>
+        <div class="hidden gap-4 sm:flex">
+            <a class="text-white">Contacto</a>
+            <a class="text-white">Documentos</a>
+            <a class="text-white">Descarga la App</a>
+        </div>
+        <button class="flex sm:hidden text-white">boton responsive</button>
+    </nav>
+    <h1 class="text-2xl my-4">Formulario htmx</h1>
     <form hx-post="/submit" hx-target="#result">
-        <label for="name">Tu nombre:</label>
-        <input type="text" id="name" name="name">
-        <button type="submit">Enviar</button>
+        <label class="" for="name">Tu nombre:</label>
+        <input class="" type="text" id="name" name="name">
+        <button class="" type="submit">Enviar</button>
     </form>
-    <div id="result"></div>
+    <div class="" id="result"></div>
 </body>
 </html>
 {{end}}
-{{define "result"}}
-<b>{{.}}</b>
-{{end}}
+{{define "result"}}{{.}}{{end}}
