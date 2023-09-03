@@ -32,3 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+// Go generate for generating TailwindCSS output file
+//
+//go:generate ./tailwind.exe -i ./tailwind.input.css -o ./public/css/tailwind.css

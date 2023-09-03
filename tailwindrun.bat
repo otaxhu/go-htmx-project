@@ -1,1 +1,0 @@
-.\tailwind.exe -i .\tailwind.input.css -o .\public\css\tailwind.css
