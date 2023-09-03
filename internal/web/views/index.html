@@ -1,4 +1,3 @@
-{{define "index"}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,9 +13,9 @@
             <span class="text-white">Logo</span>
         </div>
         <div class="hidden gap-4 sm:flex">
-            <a class="text-white">Contacto</a>
-            <a class="text-white">Documentos</a>
-            <a class="text-white">Descarga la App</a>
+            {{template "menu-button" "Contacto"}}
+            {{template "menu-button" "Documentos"}}
+            {{template "menu-button" "Descarga la App"}}
         </div>
         <button class="flex sm:hidden text-white">boton responsive</button>
     </nav>
@@ -31,3 +30,6 @@
 </html>
 {{end}}
 {{define "result"}}{{.}}{{end}}
+{{define "menu-button" -}}
+<a class="text-white">{{.}}</a>
+{{- end}}

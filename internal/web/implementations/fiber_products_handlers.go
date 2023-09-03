@@ -21,5 +21,5 @@ func (handler *fiberProductsHandlers) Submit(c *fiber.Ctx) error {
 }
 
 func (handler *fiberProductsHandlers) Home(c *fiber.Ctx) error {
-	return c.Render("index", nil)
+	return c.Render("index.html", nil)
 }
