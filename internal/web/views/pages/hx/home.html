@@ -1,0 +1,5 @@
+{{define "pages/hx/home" -}}
+    {{range $product := .}}
+        {{template "components/Card" KVM "title" $product.Name | KVM "content" $product.Description}}
+    {{end}}
+{{- end}}

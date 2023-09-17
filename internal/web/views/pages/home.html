@@ -1,0 +1,39 @@
+{{define "pages/home" -}}
+{{- template "layouts/LayoutHead" -}}
+
+{{- template "components/Navbar" -}}
+
+<main class="flex flex-col items-center px-12 py-4 gap-8">
+
+    {{$productsContainerId := UID}}
+
+    <section id="{{$productsContainerId}}" class="md:self-stretch grid gap-4 grid-cols-1 md:grid-cols-3 grid-flow-row">
+        {{range $product := .products}}
+            {{template "components/Card" KVM "title" $product.Name | KVM "content" $product.Description}}
+        {{end}}
+    </section>
+
+    {{$productBtnId := UID}}
+
+    <a href="?page=2" id="{{$productBtnId}}" hx-target="#{{$productsContainerId}}" hx-swap="beforeend"
+        class="bg-green-300 hover:bg-green-400 active:bg-green-500 active:border-slate-700 text-slate-900 py-4 px-8 rounded-xl">
+        Mas productos</a>
+</main>
+
+<script>
+    (() => {
+        htmx.on("#{{$productBtnId}}", "htmx:afterOnLoad", (e) => {
+            let url = new URL(e.target.href)
+
+            url.searchParams.set("page", Number(url.searchParams.get("page")) + 1)
+            e.target.setAttribute("href", url.href)
+        })
+
+        htmx.on("#{{$productBtnId}}", "htmx:configRequest", (e) => {
+            e.detail.path = e.target.href
+        })
+    })()
+</script>
+
+{{- template "layouts/LayoutFoot" -}}
+{{- end}}
