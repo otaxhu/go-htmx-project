@@ -45,13 +45,10 @@ func main() {
 
 	tmplFuncs := componentize.Default()
 
-	app.SetTemplateFuncs(tmplFuncs)
+	if err := app.SetTemplateFuncs(tmplFuncs); err != nil {
+		log.Fatal(err)
+	}
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
-
-// Go generate for generating TailwindCSS output file and build application
-//
-//go:generate ./tailwind.exe -i ./tailwind.input.css -o ./public/css/tailwind.css
-//go:generate go build .
