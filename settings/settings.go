@@ -1,11 +1,27 @@
 package settings
 
 import (
+	_ "embed"
+	"log"
 	"os"
 	"strconv"
 
-	_ "github.com/joho/godotenv/autoload"
+	"github.com/joho/godotenv"
 )
+
+//go:embed .env
+var envVars []byte
+
+func init() {
+	envs, err := godotenv.UnmarshalBytes(envVars)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for k, v := range envs {
+		os.Setenv(k, v)
+	}
+}
 
 type Database struct {
 	User     string
