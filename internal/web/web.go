@@ -12,7 +12,7 @@ import (
 
 type WebApp interface {
 	SetViews(viewsFS embed.FS)
-	SetTemplateFuncs(funcs template.FuncMap) error
+	SetTemplateFuncs(funcs template.FuncMap)
 	Start() error
 }
 

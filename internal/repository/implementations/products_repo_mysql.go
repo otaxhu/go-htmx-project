@@ -21,7 +21,7 @@ func NewMysqlProductsRepository(db *sql.DB) *mysqlProductsRepo {
 }
 
 const (
-	qryGetProducts    = "SELECT id, name, description, image_url FROM products OFFSET ? LIMIT ?"
+	qryGetProducts    = "SELECT id, name, description, image_url FROM products LIMIT ? OFFSET ?"
 	qryGetProductById = "SELECT id, name, description, image_url FROM products WHERE id = ?"
 	qryInsertProduct  = "INSERT INTO products (id, name, description, image_url) VALUES (?, ?, ?, ?)"
 	qryDeleteProduct  = "DELETE FROM products WHERE id = ?"
@@ -29,7 +29,7 @@ const (
 )
 
 func (repo *mysqlProductsRepo) GetProducts(ctx context.Context, offset, limit uint) ([]models.Product, error) {
-	rows, err := repo.db.QueryContext(ctx, qryGetProducts, offset, limit)
+	rows, err := repo.db.QueryContext(ctx, qryGetProducts, limit, offset)
 	if err != nil {
 		return nil, err
 	}

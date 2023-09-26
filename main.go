@@ -2,7 +2,9 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/componentize-go/componentize"
 	"github.com/otaxhu/go-htmx-project/internal/repository"
@@ -45,10 +47,16 @@ func main() {
 
 	tmplFuncs := componentize.Default()
 
-	if err := app.SetTemplateFuncs(tmplFuncs); err != nil {
-		log.Fatal(err)
-	}
-	if err := app.Start(); err != nil {
-		log.Fatal(err)
-	}
+	app.SetTemplateFuncs(tmplFuncs)
+
+	go func() {
+		if err := app.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	fmt.Printf("app running in: http://127.0.0.1:%d\n", serverSettings.Port)
+	var c chan int
+	<-c
 }

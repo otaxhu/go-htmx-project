@@ -1,23 +1,22 @@
-{{define "pages/home" -}}
+{{define "pages/publish-product" -}}
 
 {{- if .htmx -}}
 
-    {{- template "components/ProductsContainer" . -}}
+    {{- template "components/PublishProductForm" -}}
 
 {{- else -}}
 
     {{- template "layouts/LayoutHead" -}}
-
+    
     {{- template "components/Navbar" -}}
 
     <main class="flex flex-col items-center px-12 py-4 gap-8">
 
-        {{template "components/ProductsContainer" .}}
+        {{- template "components/PublishProductForm" -}}
 
     </main>
 
     {{- template "layouts/LayoutFoot" -}}
 
 {{- end -}}
-
 {{- end}}

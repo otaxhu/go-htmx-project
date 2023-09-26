@@ -1,0 +1,15 @@
+{{define "actions/PostProduct" -}}
+
+{{- $toastId := UID -}}
+{{- $closeToastBtnId := UID -}}
+
+<div id="{{$toastId}}" class="p-4 bg-emerald-300 border-2 border-emerald-500 rounded">
+    <span class="text-white font-semibold">El producto se ha guardado exitosamente</span>
+    <button id="{{$closeToastBtnId}}" class="text-red-500 border-2 border-red-500 rounded-full">X</button>
+    <script>
+        htmx.on("#{{$closeToastBtnId}}", "click", (e) => {
+            htmx.remove("#{{$toastId}}")
+        })
+    </script>
+</div>
+{{- end}}

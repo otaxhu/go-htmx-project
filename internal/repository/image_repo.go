@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
@@ -26,7 +25,7 @@ func (repo *imageRepositoryImpl) SaveImage(image *multipart.FileHeader) error {
 		return err
 	}
 	defer file.Close()
-	imagePath, err := filepath.Abs(fmt.Sprintf("./static/products/images/%s", image.Filename))
+	imagePath, err := filepath.Abs("./public/images/products/" + image.Filename)
 	if err != nil {
 		return err
 	}
@@ -41,7 +40,7 @@ func (repo *imageRepositoryImpl) SaveImage(image *multipart.FileHeader) error {
 
 func (repo *imageRepositoryImpl) DeleteImage(imageUrl string) error {
 	filename := filepath.Base(imageUrl)
-	imagePath, err := filepath.Abs(fmt.Sprintf("./static/products/%s", filename))
+	imagePath, err := filepath.Abs("./public/images/products/" + filename)
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,8 @@
 {{define "components/Navbar" -}}
 <nav class="bg-emerald-300">
     <ul class="flex gap-16 items-center justify-center text-slate-900 py-4 px-8 text-lg font-semibold">
-        {{template "components/NavbarButton" KVM "link" "/" | KVM "content" "Productos"}}
-        {{template "components/NavbarButton" KVM "link" "/publish" | KVM "content" "Publica tu producto"}}
+        {{template "components/NavbarButton" KVM "hx_target" "main" | KVM "link" "/" | KVM "content" "Productos"}}
+        {{template "components/NavbarButton" KVM "hx_target" "main" | KVM "link" "/publish" | KVM "content" "Publica tu producto"}}
     </ul>
 </nav>
 {{- end}}
