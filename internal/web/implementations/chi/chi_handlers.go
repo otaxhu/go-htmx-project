@@ -52,6 +52,7 @@ func (handler *chiProductsHandlers) GetHomeProducts(w http.ResponseWriter, r *ht
 			return
 		}
 		data["noMoreProducts"] = true
+		w.WriteHeader(http.StatusNotFound)
 		handler.ExecuteTemplate(w, "actions/GetProducts", data)
 		return
 	} else if err != nil {
@@ -70,10 +71,10 @@ func (handler *chiProductsHandlers) GetHomeProducts(w http.ResponseWriter, r *ht
 func (handler *chiProductsHandlers) PostPublishProduct(w http.ResponseWriter, r *http.Request) {
 	_, file, _ := r.FormFile("image")
 
-	fileExt := filepath.Ext(file.Filename)
-	file.Filename = uuid.NewString() + fileExt
-
-	file.Header.Set("image_url", "http://"+r.Host+"/api/static/images/products/"+file.Filename)
+	if file != nil {
+		file.Filename = uuid.NewString() + filepath.Ext(file.Filename)
+		file.Header.Set("image_url", "http://"+r.Host+"/api/static/images/products/"+file.Filename)
+	}
 
 	product := dto.SaveProduct{
 		Name:        r.FormValue("name"),
@@ -81,20 +82,28 @@ func (handler *chiProductsHandlers) PostPublishProduct(w http.ResponseWriter, r 
 		Image:       file,
 	}
 
+	data := make(map[string]any, 3)
+	data["htmx"] = r.Header.Get("HX-Request")
+	data["postingProduct"] = true
+
 	if err := handler.productsService.SaveProduct(r.Context(), product); err == service.ErrInvalidProductObject {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		handler.ExecuteTemplate(w, "actions/PostProduct", data)
 		return
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	handler.ExecuteTemplate(w, "actions/PostProduct", nil)
+	data["success"] = true
+
+	handler.ExecuteTemplate(w, "actions/PostProduct", data)
 }
 
 func (handler *chiProductsHandlers) GetPublishProductTemplate(w http.ResponseWriter, r *http.Request) {
-	data := make(map[string]any, 1)
-	data["htmx"] = r.Header.Get("HX-Request")
+	data := map[string]any{
+		"htmx": r.Header.Get("HX-Request"),
+	}
 
 	handler.ExecuteTemplate(w, "pages/publish-product", data)
 }
