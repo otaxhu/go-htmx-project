@@ -22,5 +22,14 @@
         class="font-semibold bg-green-300 hover:bg-green-400 active:bg-green-500 active:border-slate-700 text-slate-900 py-4 px-8 rounded-xl">
         Enviar</button>
 </form>
-<div id="{{$toastContainerId}}" class="flex flex-col gap-3 fixed right-4 bottom-4"></div>
+<div id="{{$toastContainerId}}" class="flex flex-col gap-3 fixed right-4 bottom-4">
+    {{if .postingProduct -}}
+        {{- if .htmx -}}
+        {{- else if .success -}}
+            {{- template "components/InfoToast" KVM "message" "Producto guardado exitosamente" . -}}
+        {{- else -}}
+            {{- template "components/InfoToast" KVM "message" "Ocurrio un error" . -}}
+        {{- end -}}
+    {{- end}}
+</div>
 {{- end}}

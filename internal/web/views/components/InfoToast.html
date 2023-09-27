@@ -1,0 +1,27 @@
+{{define "components/InfoToast" -}}
+
+{{- $toastId := UID -}}
+{{- $closeToastBtnId := UID -}}
+
+{{- if .success -}}
+<div id="{{$toastId}}" class="p-4 bg-emerald-300 border-2 border-emerald-500 rounded">
+    <span class="text-white font-semibold">{{.message}}</span>
+    <button id="{{$closeToastBtnId}}" class="text-red-500 border-2 border-red-500 rounded-full">X</button>
+    <script>
+        htmx.on("#{{$closeToastBtnId}}", "click", (e) => {
+            htmx.remove("#{{$toastId}}")
+        })
+    </script>
+</div>
+{{- else -}}
+<div id="{{$toastId}}" class="p-4 bg-red-300 border-2 border-red-500 rounded">
+    <span class="text-black font-semibold">{{.message}}</span>
+    <button id="{{$closeToastBtnId}}" class="text-white bg-black rounded-full">X</button>
+    <script>
+        htmx.on("#{{$closeToastBtnId}}", "click", (e) => {
+            htmx.remove("#{{$toastId}}")
+        })
+    </script>
+</div>
+{{- end -}}
+{{- end}}
