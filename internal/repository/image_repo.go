@@ -5,6 +5,8 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/otaxhu/go-htmx-project/config"
 )
 
 //go:generate mockery --name ImageRepository
@@ -15,7 +17,7 @@ type ImageRepository interface {
 
 type imageRepositoryImpl struct{}
 
-func NewImageRepository() ImageRepository {
+func NewImageRepository(imageRepoCfg config.ImageRepo) ImageRepository {
 	return &imageRepositoryImpl{}
 }
 

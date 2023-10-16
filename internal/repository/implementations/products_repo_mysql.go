@@ -3,6 +3,8 @@ package implementations
 import (
 	"context"
 	"database/sql"
+	"log"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/otaxhu/go-htmx-project/internal/models"
@@ -21,14 +23,35 @@ func NewMysqlProductsRepository(db *sql.DB) *mysqlProductsRepo {
 }
 
 const (
-	qryGetProducts    = "SELECT id, name, description, image_url FROM products LIMIT ? OFFSET ?"
-	qryGetProductById = "SELECT id, name, description, image_url FROM products WHERE id = ?"
-	qryInsertProduct  = "INSERT INTO products (id, name, description, image_url) VALUES (?, ?, ?, ?)"
-	qryDeleteProduct  = "DELETE FROM products WHERE id = ?"
-	qryUpdateProduct  = "UPDATE products SET name = ?, description = ?, image_url = ? WHERE id = ?"
+	qryGetProducts    = "SELECT id, name, description FROM products LIMIT ? OFFSET ?"
+	qryGetProductById = "SELECT id, name, description FROM products WHERE id = ?"
+	qrySearchProducts = `SELECT
+							id,
+							name,
+							description
+						FROM products
+						WHERE
+							-- Exact coincidence
+							name = ? OR
+							description = ? OR
+
+							-- Starts with ?
+							name LIKE ? OR
+							description LIKE ? OR
+
+							-- Ends with ?
+							name LIKE ? OR
+							description LIKE ? OR
+
+							-- Inner match ?
+							name LIKE ? OR
+							description LIKE ?`
+	qryInsertProduct = "INSERT INTO products (id, name, description) VALUES (?, ?, ?)"
+	qryDeleteProduct = "DELETE FROM products WHERE id = ?"
+	qryUpdateProduct = "UPDATE products SET name = ?, description = ? WHERE id = ?"
 )
 
-func (repo *mysqlProductsRepo) GetProducts(ctx context.Context, offset, limit uint) ([]models.Product, error) {
+func (repo *mysqlProductsRepo) GetProducts(ctx context.Context, offset, limit int) ([]models.Product, error) {
 	rows, err := repo.db.QueryContext(ctx, qryGetProducts, limit, offset)
 	if err != nil {
 		return nil, err
@@ -36,8 +59,9 @@ func (repo *mysqlProductsRepo) GetProducts(ctx context.Context, offset, limit ui
 	products := []models.Product{}
 	for rows.Next() {
 		product := models.Product{}
-		if err := rows.Scan(&product.Id, &product.Name, &product.Description, &product.ImageUrl); err != nil {
-			return nil, err
+		if err := rows.Scan(&product.Id, &product.Name, &product.Description); err != nil {
+			log.Println(err)
+			continue
 		}
 		products = append(products, product)
 	}
@@ -49,7 +73,7 @@ func (repo *mysqlProductsRepo) GetProducts(ctx context.Context, offset, limit ui
 
 func (repo *mysqlProductsRepo) GetProductById(ctx context.Context, id string) (models.Product, error) {
 	product := models.Product{}
-	if err := repo.db.QueryRowContext(ctx, qryGetProductById, id).Scan(&product.Id, &product.Name, &product.Description, &product.ImageUrl); err == sql.ErrNoRows {
+	if err := repo.db.QueryRowContext(ctx, qryGetProductById, id).Scan(&product.Id, &product.Name, &product.Description); err == sql.ErrNoRows {
 		return product, repo_errors.ErrNoRows
 	} else if err != nil {
 		return product, err
@@ -57,33 +81,62 @@ func (repo *mysqlProductsRepo) GetProductById(ctx context.Context, id string) (m
 	return product, nil
 }
 
-func (repo *mysqlProductsRepo) UpsertProduct(ctx context.Context, product models.Product) (wrappers.Tx, error) {
+func sanatizeLikeTerm(term string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(term, "\\", "\\\\"), "%", "\\%"), "_", "\\_")
+}
+
+func (repo *mysqlProductsRepo) SearchProducts(ctx context.Context, term string) ([]models.Product, error) {
+	sanatizedLikeTerm := sanatizeLikeTerm(term)
+	sanatizedStartsWithTerm := sanatizedLikeTerm + "%"
+	sanatizedEndsWithTerm := "%" + sanatizedLikeTerm
+	sanatizedInnerMatchTerm := "%" + sanatizedLikeTerm + "%"
+	rows, err := repo.db.QueryContext(ctx, qrySearchProducts,
+		term,
+		term,
+		sanatizedStartsWithTerm,
+		sanatizedStartsWithTerm,
+		sanatizedEndsWithTerm,
+		sanatizedEndsWithTerm,
+		sanatizedInnerMatchTerm,
+		sanatizedInnerMatchTerm,
+	)
+	if err != nil {
+		return nil, err
+	}
+	products := []models.Product{}
+	for rows.Next() {
+		p := models.Product{}
+		if err := rows.Scan(&p.Id, &p.Name, &p.Description); err != nil {
+			log.Println(err)
+			continue
+		}
+		products = append(products, p)
+	}
+	if len(products) == 0 {
+		return nil, repo_errors.ErrNoRows
+	}
+	return products, nil
+}
+
+func (repo *mysqlProductsRepo) InsertProduct(ctx context.Context, product models.Product) (wrappers.Tx, string, error) {
+	tx, err := repo.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	generatedId := uuid.NewString()
+	if _, err := tx.ExecContext(ctx, qryInsertProduct, generatedId, product.Name, product.Description); err != nil {
+		tx.Rollback()
+		return nil, "", err
+	}
+	return tx, generatedId, nil
+}
+
+func (repo *mysqlProductsRepo) UpdateProduct(ctx context.Context, product models.Product) (wrappers.Tx, error) {
 	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	if product.Id != "" {
-		if _, err := repo.GetProductById(ctx, product.Id); err != nil && err != repo_errors.ErrNoRows {
-			tx.Rollback()
-			return nil, err
-		} else if err == repo_errors.ErrNoRows {
-			// Insert if there is no record in the database
-			if _, err := tx.ExecContext(ctx, qryInsertProduct, uuid.NewString(), product.Name, product.Description, product.ImageUrl); err != nil {
-				tx.Rollback()
-				return nil, err
-			}
-			return tx, nil
-		}
-		// Update if there is record in the database
-		if _, err := tx.ExecContext(ctx, qryUpdateProduct, product.Name, product.Description, product.ImageUrl, product.Id); err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-		return tx, nil
-	}
-
-	// Insert if there is no Id field in the product struct
-	if _, err := tx.ExecContext(ctx, qryInsertProduct, uuid.NewString(), product.Name, product.Description, product.ImageUrl); err != nil {
+	if _, err := tx.ExecContext(ctx, qryUpdateProduct, product.Name, product.Description, product.Id); err != nil {
 		tx.Rollback()
 		return nil, err
 	}

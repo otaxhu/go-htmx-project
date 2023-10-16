@@ -67,15 +67,15 @@ func (_m *ProductsRepository) GetProductById(ctx context.Context, id string) (mo
 }
 
 // GetProducts provides a mock function with given fields: ctx, offset, limit
-func (_m *ProductsRepository) GetProducts(ctx context.Context, offset uint, limit uint) ([]models.Product, error) {
+func (_m *ProductsRepository) GetProducts(ctx context.Context, offset int, limit int) ([]models.Product, error) {
 	ret := _m.Called(ctx, offset, limit)
 
 	var r0 []models.Product
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint) ([]models.Product, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) ([]models.Product, error)); ok {
 		return rf(ctx, offset, limit)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint) []models.Product); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) []models.Product); ok {
 		r0 = rf(ctx, offset, limit)
 	} else {
 		if ret.Get(0) != nil {
@@ -83,7 +83,7 @@ func (_m *ProductsRepository) GetProducts(ctx context.Context, offset uint, limi
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uint, uint) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, int, int) error); ok {
 		r1 = rf(ctx, offset, limit)
 	} else {
 		r1 = ret.Error(1)
@@ -92,8 +92,67 @@ func (_m *ProductsRepository) GetProducts(ctx context.Context, offset uint, limi
 	return r0, r1
 }
 
-// UpsertProduct provides a mock function with given fields: ctx, product
-func (_m *ProductsRepository) UpsertProduct(ctx context.Context, product models.Product) (wrappers.Tx, error) {
+// InsertProduct provides a mock function with given fields: ctx, product
+func (_m *ProductsRepository) InsertProduct(ctx context.Context, product models.Product) (wrappers.Tx, string, error) {
+	ret := _m.Called(ctx, product)
+
+	var r0 wrappers.Tx
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, models.Product) (wrappers.Tx, string, error)); ok {
+		return rf(ctx, product)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, models.Product) wrappers.Tx); ok {
+		r0 = rf(ctx, product)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(wrappers.Tx)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, models.Product) string); ok {
+		r1 = rf(ctx, product)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, models.Product) error); ok {
+		r2 = rf(ctx, product)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// SearchProducts provides a mock function with given fields: ctx, term
+func (_m *ProductsRepository) SearchProducts(ctx context.Context, term string) ([]models.Product, error) {
+	ret := _m.Called(ctx, term)
+
+	var r0 []models.Product
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]models.Product, error)); ok {
+		return rf(ctx, term)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []models.Product); ok {
+		r0 = rf(ctx, term)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]models.Product)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, term)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdateProduct provides a mock function with given fields: ctx, product
+func (_m *ProductsRepository) UpdateProduct(ctx context.Context, product models.Product) (wrappers.Tx, error) {
 	ret := _m.Called(ctx, product)
 
 	var r0 wrappers.Tx

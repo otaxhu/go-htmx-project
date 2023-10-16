@@ -1,53 +1,42 @@
 package main
 
 import (
-	"embed"
+	_ "embed"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/componentize-go/componentize"
+	"github.com/otaxhu/go-htmx-project/config"
 	"github.com/otaxhu/go-htmx-project/internal/repository"
 	"github.com/otaxhu/go-htmx-project/internal/service"
 	"github.com/otaxhu/go-htmx-project/internal/web"
-	"github.com/otaxhu/go-htmx-project/settings"
 )
 
-//go:embed internal/web/views/*
-var viewsFS embed.FS
+//go:embed .env
+var envVarsFile []byte
 
 func main() {
-	// Settings DI
-	serverSettings, err := settings.NewServer()
-	if err != nil {
-		log.Fatal(err)
-	}
-	dbSettings, err := settings.NewDatabase()
+	// Config DI
+	cfg, err := config.New(envVarsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Repositories DI
-	productsRepo, err := repository.NewProductsRepository(dbSettings)
+	productsRepo, err := repository.NewProductsRepository(cfg.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
-	imageRepo := repository.NewImageRepository()
+	_ = repository.NewImageRepository(cfg.ImageRepo)
 
 	// Services DI
-	productsService := service.NewProductsService(productsRepo, imageRepo)
+	productsService := service.NewProductsService(cfg.ProductsService, productsRepo)
 
 	// Web Framework DI
-	app, err := web.NewWebApp(serverSettings, productsService)
+	app, err := web.NewWebApp(cfg.Server, productsService)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	app.SetViews(viewsFS)
-
-	tmplFuncs := componentize.Default()
-
-	app.SetTemplateFuncs(tmplFuncs)
 
 	go func() {
 		if err := app.Start(); err != nil {
@@ -56,7 +45,7 @@ func main() {
 	}()
 
 	time.Sleep(100 * time.Millisecond)
-	fmt.Printf("app running in: http://127.0.0.1:%d\n", serverSettings.Port)
+	fmt.Printf("app running in: http://127.0.0.1:%d\n", cfg.Server.Port)
 	var c chan int
 	<-c
 }

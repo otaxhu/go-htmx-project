@@ -1,9 +1,0 @@
-{{define "components/Card" -}}
-<article class="border-2 border-green-400 rounded-xl col-span-1 p-8">
-    <h2 class="text-4xl font-bold mb-4 text-center md:text-left">{{.title}}</h2>
-    {{if .imageUrl}}
-    <img src="{{.imageUrl}}" alt="{{.title}}">
-    {{end}}
-    <p class="text-lg text-justify md:text-left">{{.content}}</p>
-</article>
-{{- end}}

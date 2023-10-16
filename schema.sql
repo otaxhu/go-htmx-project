@@ -7,6 +7,5 @@ USE go_htmx_project;
 CREATE TABLE products(
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    description VARCHAR(1024) NOT NULL,
-    image_url VARCHAR(255) NOT NULL
+    description VARCHAR(1024) NOT NULL
 );

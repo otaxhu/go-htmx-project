@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	"mime/multipart"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/otaxhu/go-htmx-project/config"
 	"github.com/otaxhu/go-htmx-project/internal/models"
 	"github.com/otaxhu/go-htmx-project/internal/models/dto"
 	repo_errors "github.com/otaxhu/go-htmx-project/internal/repository/errors"
@@ -50,26 +50,29 @@ func TestMain(m *testing.M) {
 	productsRepoMock = &repo_mocks.ProductsRepository{}
 	txMock = &wrappers_mocks.Tx{}
 	imageRepoMock = &repo_mocks.ImageRepository{}
-	productsService = NewProductsService(productsRepoMock, imageRepoMock)
+	cfgProductsService := config.ProductsService{GetProductsLimit: 50}
+	productsService = NewProductsService(cfgProductsService, productsRepoMock)
 	validUuid = uuid.NewString()
 	notExistUuid = uuid.NewString()
 	failingProductsRepoMock = &repo_mocks.ProductsRepository{}
 	failingImageRepoMock = &repo_mocks.ImageRepository{}
-	failingProductsRepoProductsService = NewProductsService(failingProductsRepoMock, imageRepoMock)
-	failingImageRepoProductsService = NewProductsService(productsRepoMock, failingImageRepoMock)
+	failingProductsRepoProductsService = NewProductsService(cfgProductsService, failingProductsRepoMock)
+	failingImageRepoProductsService = NewProductsService(cfgProductsService, productsRepoMock)
 	txMock.On("Commit").Return(nil)
 	txMock.On("Rollback").Return(nil)
 	productsRepoMock.On("DeleteProduct", mock.Anything, mock.Anything).Return(txMock, nil)
 	productsRepoMock.On("GetProductById", mock.Anything, validUuid).Return(models.Product{}, nil)
 	productsRepoMock.On("GetProductById", mock.Anything, notExistUuid).Return(models.Product{}, repo_errors.ErrNoRows)
 	productsRepoMock.On("GetProducts", mock.Anything, mock.Anything, mock.Anything).Return([]models.Product{{}}, nil)
-	productsRepoMock.On("UpsertProduct", mock.Anything, mock.Anything).Return(txMock, nil)
+	productsRepoMock.On("InsertProduct", mock.Anything, mock.Anything).Return(txMock, validUuid, nil)
+	productsRepoMock.On("UpdateProduct", mock.Anything, mock.Anything).Return(txMock, nil)
 	imageRepoMock.On("DeleteImage", mock.Anything).Return(nil)
 	imageRepoMock.On("SaveImage", mock.Anything).Return(nil)
 	failingProductsRepoMock.On("DeleteProduct", mock.Anything, mock.Anything).Return(nil, errors.New("test error"))
 	failingProductsRepoMock.On("GetProductById", mock.Anything, mock.Anything).Return(models.Product{}, errors.New("test error"))
 	failingProductsRepoMock.On("GetProducts", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("test error"))
-	failingProductsRepoMock.On("UpsertProduct", mock.Anything, mock.Anything).Return(nil, errors.New("test error"))
+	failingProductsRepoMock.On("InsertProduct", mock.Anything, mock.Anything).Return(nil, "", errors.New("test error"))
+	failingProductsRepoMock.On("UpdateProduct", mock.Anything, mock.Anything).Return(nil, errors.New("test error"))
 	failingImageRepoMock.On("DeleteImage", mock.Anything).Return(errors.New("test error"))
 	failingImageRepoMock.On("SaveImage", mock.Anything).Return(errors.New("test error"))
 	os.Exit(m.Run())
@@ -78,7 +81,7 @@ func TestMain(m *testing.M) {
 func TestGetProducts(t *testing.T) {
 	testCasesWorking := []struct {
 		name          string
-		page          uint
+		page          int
 		expectedError error
 	}{
 		{
@@ -199,7 +202,6 @@ func TestSaveProduct(t *testing.T) {
 			productData: dto.SaveProduct{
 				Name:        "test",
 				Description: "test",
-				Image:       &multipart.FileHeader{},
 			},
 			expectedError: nil,
 		},
@@ -208,7 +210,6 @@ func TestSaveProduct(t *testing.T) {
 			productData: dto.SaveProduct{
 				Name:        "",
 				Description: "",
-				Image:       nil,
 			},
 			expectedError: ErrInvalidProductObject,
 		},
@@ -224,16 +225,6 @@ func TestSaveProduct(t *testing.T) {
 		},
 	}
 
-	testCasesFailingImageRepo := []struct {
-		name          string
-		expectedError error
-	}{
-		{
-			name:          "SaveProduct_FailingImageRepo",
-			expectedError: ErrInternalServer,
-		},
-	}
-
 	ctx := context.Background()
 
 	for i := range testCasesWorking {
@@ -245,7 +236,7 @@ func TestSaveProduct(t *testing.T) {
 			txMock.Test(t)
 			imageRepoMock.Test(t)
 
-			err := productsService.SaveProduct(ctx, tc.productData)
+			_, err := productsService.SaveProduct(ctx, tc.productData)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}
@@ -257,27 +248,9 @@ func TestSaveProduct(t *testing.T) {
 			imageRepoMock.Test(t)
 			failingProductsRepoMock.Test(t)
 
-			err := failingProductsRepoProductsService.SaveProduct(ctx, dto.SaveProduct{
+			_, err := failingProductsRepoProductsService.SaveProduct(ctx, dto.SaveProduct{
 				Name:        "test",
 				Description: "test",
-				Image:       &multipart.FileHeader{},
-			})
-			assert.Equal(t, tc.expectedError, err)
-		})
-	}
-	for i := range testCasesFailingImageRepo {
-		tc := testCasesFailingImageRepo[i]
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			productsRepoMock.Test(t)
-			txMock.Test(t)
-			failingImageRepoMock.Test(t)
-
-			err := failingImageRepoProductsService.SaveProduct(ctx, dto.SaveProduct{
-				Name:        "test",
-				Description: "test",
-				Image:       &multipart.FileHeader{},
 			})
 			assert.Equal(t, tc.expectedError, err)
 		})
@@ -296,7 +269,6 @@ func TestUpdateProduct(t *testing.T) {
 				Id:          validUuid,
 				Name:        "test",
 				Description: "test",
-				Image:       &multipart.FileHeader{},
 			},
 			expectedError: nil,
 		},
@@ -306,7 +278,6 @@ func TestUpdateProduct(t *testing.T) {
 				Id:          "this is not an UUID",
 				Name:        "test",
 				Description: "test",
-				Image:       &multipart.FileHeader{},
 			},
 			expectedError: ErrInvalidProductObject,
 		},
@@ -316,7 +287,6 @@ func TestUpdateProduct(t *testing.T) {
 				Id:          notExistUuid,
 				Name:        "test",
 				Description: "test",
-				Image:       &multipart.FileHeader{},
 			},
 			expectedError: ErrNotFound,
 		},
@@ -326,7 +296,6 @@ func TestUpdateProduct(t *testing.T) {
 				Id:          validUuid,
 				Name:        "test",
 				Description: "test",
-				Image:       nil,
 			},
 			expectedError: nil,
 		},
@@ -338,16 +307,6 @@ func TestUpdateProduct(t *testing.T) {
 	}{
 		{
 			name:          "UpdateProduct_FailingProductsRepo",
-			expectedError: ErrInternalServer,
-		},
-	}
-
-	testCasesFailingImageRepo := []struct {
-		name          string
-		expectedError error
-	}{
-		{
-			name:          "UpdateProduct_FailingImageRepo",
 			expectedError: ErrInternalServer,
 		},
 	}
@@ -379,25 +338,6 @@ func TestUpdateProduct(t *testing.T) {
 				Id:          validUuid,
 				Name:        "test",
 				Description: "test",
-				Image:       nil,
-			})
-			assert.Equal(t, tc.expectedError, err)
-		})
-	}
-	for i := range testCasesFailingImageRepo {
-		tc := testCasesFailingImageRepo[i]
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			productsRepoMock.Test(t)
-			txMock.Test(t)
-			failingImageRepoMock.Test(t)
-
-			err := failingImageRepoProductsService.UpdateProduct(ctx, dto.UpdateProduct{
-				Id:          validUuid,
-				Name:        "test",
-				Description: "test",
-				Image:       &multipart.FileHeader{},
 			})
 			assert.Equal(t, tc.expectedError, err)
 		})
@@ -432,16 +372,6 @@ func TestDeleteProduct(t *testing.T) {
 		},
 	}
 
-	testCasesFailingImageRepo := []struct {
-		name          string
-		expectedError error
-	}{
-		{
-			name:          "DeleteProduct_FailingImageRepo",
-			expectedError: ErrInternalServer,
-		},
-	}
-
 	ctx := context.Background()
 
 	for i := range testCasesWorking {
@@ -466,19 +396,6 @@ func TestDeleteProduct(t *testing.T) {
 			imageRepoMock.Test(t)
 
 			err := failingProductsRepoProductsService.DeleteProduct(ctx, validUuid)
-			assert.Equal(t, tc.expectedError, err)
-		})
-	}
-	for i := range testCasesFailingImageRepo {
-		tc := testCasesFailingImageRepo[i]
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			productsRepoMock.Test(t)
-			txMock.Test(t)
-			failingImageRepoMock.Test(t)
-
-			err := failingImageRepoProductsService.DeleteProduct(ctx, validUuid)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}
