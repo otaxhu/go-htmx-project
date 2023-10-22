@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/otaxhu/go-htmx-project/config"
@@ -9,7 +10,8 @@ import (
 )
 
 type WebApp interface {
-	Start() error
+	StartAndNotify(notifyChan chan struct{}) error
+	Shutdown(ctx context.Context) error
 }
 
 func NewWebApp(serverCfg config.Server, productsService service.ProductsService) (WebApp, error) {

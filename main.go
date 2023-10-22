@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"log"
-	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/otaxhu/go-htmx-project/config"
 	"github.com/otaxhu/go-htmx-project/internal/repository"
@@ -16,6 +19,37 @@ import (
 var envVarsFile []byte
 
 func main() {
+	closeAppSignal := make(chan os.Signal, 1)
+	signal.Notify(closeAppSignal, os.Interrupt, syscall.SIGTERM)
+
+	// Closeables dependencies
+	var (
+		productsRepo repository.ProductsRepository
+		webApp       web.WebApp
+	)
+
+	ctx := context.Background()
+
+	// Gracefully shutting down app when closeAppSignal gets a signal
+	go func() {
+		<-closeAppSignal
+		if webApp != nil {
+			fmt.Println("Apagando WebApp...")
+			if err := webApp.Shutdown(ctx); err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		if productsRepo != nil {
+			fmt.Println("Apagando ProductsRepository...")
+			if err := productsRepo.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}
+		fmt.Println("Aplicacion apagada exitosamente")
+		os.Exit(0)
+	}()
+
 	// Config DI
 	cfg, err := config.New(envVarsFile)
 	if err != nil {
@@ -23,7 +57,7 @@ func main() {
 	}
 
 	// Repositories DI
-	productsRepo, err := repository.NewProductsRepository(cfg.Database)
+	productsRepo, err = repository.NewProductsRepository(cfg.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,19 +67,19 @@ func main() {
 	productsService := service.NewProductsService(cfg.ProductsService, productsRepo)
 
 	// Web Framework DI
-	app, err := web.NewWebApp(cfg.Server, productsService)
+	webApp, err = web.NewWebApp(cfg.Server, productsService)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	webAppStartedSignal := make(chan struct{})
 	go func() {
-		if err := app.Start(); err != nil {
+		if err := webApp.StartAndNotify(webAppStartedSignal); err != nil {
 			log.Fatal(err)
 		}
 	}()
-
-	time.Sleep(100 * time.Millisecond)
-	fmt.Printf("app running in: http://127.0.0.1:%d\n", cfg.Server.Port)
-	var c chan int
-	<-c
+	<-webAppStartedSignal
+	fmt.Println("Aplicacion inicializada exitosamente")
+	var blockingCh chan struct{}
+	<-blockingCh
 }

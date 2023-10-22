@@ -16,8 +16,22 @@ type ProductsRepository struct {
 	mock.Mock
 }
 
-// DeleteProduct provides a mock function with given fields: ctx, id
-func (_m *ProductsRepository) DeleteProduct(ctx context.Context, id string) (wrappers.Tx, error) {
+// Close provides a mock function with given fields:
+func (_m *ProductsRepository) Close() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteProductById provides a mock function with given fields: ctx, id
+func (_m *ProductsRepository) DeleteProductById(ctx context.Context, id string) (wrappers.Tx, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 wrappers.Tx

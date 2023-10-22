@@ -60,7 +60,7 @@ func TestMain(m *testing.M) {
 	failingImageRepoProductsService = NewProductsService(cfgProductsService, productsRepoMock)
 	txMock.On("Commit").Return(nil)
 	txMock.On("Rollback").Return(nil)
-	productsRepoMock.On("DeleteProduct", mock.Anything, mock.Anything).Return(txMock, nil)
+	productsRepoMock.On("DeleteProductById", mock.Anything, mock.Anything).Return(txMock, nil)
 	productsRepoMock.On("GetProductById", mock.Anything, validUuid).Return(models.Product{}, nil)
 	productsRepoMock.On("GetProductById", mock.Anything, notExistUuid).Return(models.Product{}, repo_errors.ErrNoRows)
 	productsRepoMock.On("GetProducts", mock.Anything, mock.Anything, mock.Anything).Return([]models.Product{{}}, nil)
@@ -68,7 +68,7 @@ func TestMain(m *testing.M) {
 	productsRepoMock.On("UpdateProduct", mock.Anything, mock.Anything).Return(txMock, nil)
 	imageRepoMock.On("DeleteImage", mock.Anything).Return(nil)
 	imageRepoMock.On("SaveImage", mock.Anything).Return(nil)
-	failingProductsRepoMock.On("DeleteProduct", mock.Anything, mock.Anything).Return(nil, errors.New("test error"))
+	failingProductsRepoMock.On("DeleteProductById", mock.Anything, mock.Anything).Return(nil, errors.New("test error"))
 	failingProductsRepoMock.On("GetProductById", mock.Anything, mock.Anything).Return(models.Product{}, errors.New("test error"))
 	failingProductsRepoMock.On("GetProducts", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("test error"))
 	failingProductsRepoMock.On("InsertProduct", mock.Anything, mock.Anything).Return(nil, "", errors.New("test error"))
@@ -92,7 +92,7 @@ func TestGetProducts(t *testing.T) {
 		{
 			name:          "GetProducts_InvalidPageParam",
 			page:          0,
-			expectedError: ErrInvalidPageParam,
+			expectedError: ErrInvalidInput,
 		},
 	}
 
@@ -154,10 +154,12 @@ func TestGetProductById(t *testing.T) {
 	}
 	testCasesFailingProductsRepo := []struct {
 		name          string
+		id            string
 		expectedError error
 	}{
 		{
 			name:          "GetProductById_FailingProductsRepo",
+			id:            validUuid,
 			expectedError: ErrInternalServer,
 		},
 	}
@@ -185,7 +187,7 @@ func TestGetProductById(t *testing.T) {
 			imageRepoMock.Test(t)
 			failingProductsRepoMock.Test(t)
 
-			_, err := failingProductsRepoProductsService.GetProductById(ctx, "test")
+			_, err := failingProductsRepoProductsService.GetProductById(ctx, tc.id)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}
@@ -211,7 +213,7 @@ func TestSaveProduct(t *testing.T) {
 				Name:        "",
 				Description: "",
 			},
-			expectedError: ErrInvalidProductObject,
+			expectedError: ErrInvalidInput,
 		},
 	}
 
@@ -279,7 +281,7 @@ func TestUpdateProduct(t *testing.T) {
 				Name:        "test",
 				Description: "test",
 			},
-			expectedError: ErrInvalidProductObject,
+			expectedError: ErrInvalidInput,
 		},
 		{
 			name: "UpdateProduct_NotFound",
@@ -322,7 +324,7 @@ func TestUpdateProduct(t *testing.T) {
 			txMock.Test(t)
 			imageRepoMock.Test(t)
 
-			err := productsService.UpdateProduct(ctx, tc.productData)
+			_, err := productsService.UpdateProduct(ctx, tc.productData)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}
@@ -334,7 +336,7 @@ func TestUpdateProduct(t *testing.T) {
 			failingProductsRepoMock.Test(t)
 			imageRepoMock.Test(t)
 
-			err := failingProductsRepoProductsService.UpdateProduct(ctx, dto.UpdateProduct{
+			_, err := failingProductsRepoProductsService.UpdateProduct(ctx, dto.UpdateProduct{
 				Id:          validUuid,
 				Name:        "test",
 				Description: "test",
@@ -383,7 +385,7 @@ func TestDeleteProduct(t *testing.T) {
 			txMock.Test(t)
 			imageRepoMock.Test(t)
 
-			err := productsService.DeleteProduct(ctx, tc.id)
+			err := productsService.DeleteProductById(ctx, tc.id)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}
@@ -395,7 +397,7 @@ func TestDeleteProduct(t *testing.T) {
 			failingProductsRepoMock.Test(t)
 			imageRepoMock.Test(t)
 
-			err := failingProductsRepoProductsService.DeleteProduct(ctx, validUuid)
+			err := failingProductsRepoProductsService.DeleteProductById(ctx, validUuid)
 			assert.Equal(t, tc.expectedError, err)
 		})
 	}

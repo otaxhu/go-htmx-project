@@ -18,7 +18,9 @@ type ProductsRepository interface {
 	SearchProducts(ctx context.Context, term string) ([]models.Product, error)
 	InsertProduct(ctx context.Context, product models.Product) (wrappers.Tx, string, error)
 	UpdateProduct(ctx context.Context, product models.Product) (wrappers.Tx, error)
-	DeleteProduct(ctx context.Context, id string) (wrappers.Tx, error)
+	DeleteProductById(ctx context.Context, id string) (wrappers.Tx, error)
+
+	Close() error
 }
 
 func NewProductsRepository(dbCfg config.Database) (ProductsRepository, error) {

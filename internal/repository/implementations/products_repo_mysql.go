@@ -51,6 +51,10 @@ const (
 	qryUpdateProduct = "UPDATE products SET name = ?, description = ? WHERE id = ?"
 )
 
+func (repo *mysqlProductsRepo) Close() error {
+	return repo.db.Close()
+}
+
 func (repo *mysqlProductsRepo) GetProducts(ctx context.Context, offset, limit int) ([]models.Product, error) {
 	rows, err := repo.db.QueryContext(ctx, qryGetProducts, limit, offset)
 	if err != nil {
@@ -143,7 +147,7 @@ func (repo *mysqlProductsRepo) UpdateProduct(ctx context.Context, product models
 	return tx, nil
 }
 
-func (repo *mysqlProductsRepo) DeleteProduct(ctx context.Context, id string) (wrappers.Tx, error) {
+func (repo *mysqlProductsRepo) DeleteProductById(ctx context.Context, id string) (wrappers.Tx, error) {
 	tx, err := repo.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
