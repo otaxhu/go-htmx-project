@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	_ "embed"
+	"embed"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +17,9 @@ import (
 
 //go:embed .env
 var envVarsFile []byte
+
+//go:embed static/*
+var staticFiles embed.FS
 
 func main() {
 	closeAppSignal := make(chan os.Signal, 1)
@@ -67,7 +70,7 @@ func main() {
 	productsService := service.NewProductsService(cfg.ProductsService, productsRepo)
 
 	// Web Framework DI
-	webApp, err = web.NewWebApp(cfg.Server, productsService)
+	webApp, err = web.NewWebApp(cfg.Server, productsService, staticFiles)
 	if err != nil {
 		log.Fatal(err)
 	}

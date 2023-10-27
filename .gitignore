@@ -25,6 +25,3 @@ go.work
 
 # Distribution directory (ready for deploy)
 dist/
-
-# CLI programs that I want git to follow
-!tailwind.exe
