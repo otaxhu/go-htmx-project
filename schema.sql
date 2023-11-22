@@ -1,8 +1,8 @@
-DROP DATABASE IF EXISTS angolar;
+DROP DATABASE IF EXISTS go_htmx_project;
 
-CREATE DATABASE angolar;
+CREATE DATABASE go_htmx_project;
 
-USE angolar;
+USE go_htmx_project;
 
 CREATE TABLE products(
     id VARCHAR(255) PRIMARY KEY,

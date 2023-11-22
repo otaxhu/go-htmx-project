@@ -8,5 +8,9 @@ import (
 )
 
 func GetSqlConnection(dbCfg config.Database) (*sql.DB, error) {
-	return sql.Open(dbCfg.Driver, dbCfg.Url)
+	db, err := sql.Open(dbCfg.Driver, dbCfg.Url)
+	if err != nil {
+		return nil, err
+	}
+	return db, db.Ping()
 }

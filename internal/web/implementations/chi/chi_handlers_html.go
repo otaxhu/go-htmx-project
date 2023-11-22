@@ -1,21 +1,21 @@
 package chi
 
 import (
-	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/otaxhu/go-htmx-project/internal/service"
-	"github.com/otaxhu/go-htmx-project/internal/web/templates/pages"
 )
 
 type chiHtmlProductsHandlers struct {
 	productsService service.ProductsService
+	templates       *template.Template
 }
 
 func (handler *chiHtmlProductsHandlers) GetAndSearchProducts(w http.ResponseWriter, r *http.Request) {
-	
-	if err := pages.HomeProducts("Hola Mundo!!!").Render(r.Context(), w); err != nil {
-		fmt.Fprintf(w, "there was an error trying to rendering HomeProducts: %v", err)
+	if err := handler.templates.ExecuteTemplate(w, "actions/get-products", nil); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 

@@ -1,22 +1,20 @@
-build_project_windows: build_templ build_tailwind
-	go build -o ./dist/app_windows.exe .
+build_project_linux:
+	./bin/cssmodules \
+		-input-dir ./internal/web/views/ \
+		-output-dir ./compiled-templates \
+		-output-css-path ./static/css/styles.css
 
-build_project_linux: build_templ build_tailwind
 	go build -o ./dist/app_linux .
 
-build_templ:
-	templ generate -path ./internal/web/templates
-
-build_tailwind:
-	.\tailwind.exe -i ./tailwind.input.css -o ./static/css/tailwind.css
-
 # This commands must be executed only once
-install_external_tools_windows: \
-	install_tailwind_cli_windows \
-	install_templ_cli
+install_external_tools_linux: \
+	install_bootstrap_icons \
+	build_cssmodules
 
-install_tailwind_cli_windows:
-	curl -sL -o ".\tailwind.exe" "https://github.com/tailwindlabs/tailwindcss/releases/download/v3.3.5/tailwindcss-windows-x64.exe"
+install_bootstrap_icons:
+	curl -sL --create-dirs -o "./static/icons/bs.zip" "https://github.com/twbs/icons/releases/download/v1.11.1/bootstrap-icons-1.11.1.zip"
+	unzip -q -j -d "./static/icons/bootstrap-icons" "./static/icons/bs.zip" "*.svg"
+	rm -f "./static/icons/bs.zip"
 
-install_templ_cli:
-	go install github.com/a-h/templ/cmd/templ@latest
+build_cssmodules:
+	go build -o ./bin/cssmodules ./cmd/cssmodules

@@ -2,8 +2,9 @@ package web
 
 import (
 	"context"
-	"embed"
 	"fmt"
+	"html/template"
+	"io/fs"
 
 	"github.com/otaxhu/go-htmx-project/config"
 	"github.com/otaxhu/go-htmx-project/internal/service"
@@ -15,10 +16,10 @@ type WebApp interface {
 	Shutdown(ctx context.Context) error
 }
 
-func NewWebApp(serverCfg config.Server, productsService service.ProductsService, staticFS embed.FS) (WebApp, error) {
+func NewWebApp(serverCfg config.Server, productsService service.ProductsService, staticFS fs.FS, templates *template.Template) (WebApp, error) {
 	switch serverCfg.Framework {
 	case "chi":
-		return chi_implementation.NewChiApp(serverCfg, productsService, staticFS), nil
+		return chi_implementation.NewChiApp(serverCfg, productsService, staticFS, templates), nil
 	default:
 		return nil, fmt.Errorf("the `%s` framework does not have a `WebApp` implementation", serverCfg.Framework)
 	}

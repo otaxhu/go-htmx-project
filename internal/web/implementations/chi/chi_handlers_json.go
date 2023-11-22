@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/elnormous/contenttype"
 	"github.com/go-chi/chi/v5"
 	"github.com/otaxhu/go-htmx-project/internal/models/dto"
 	"github.com/otaxhu/go-htmx-project/internal/service"
@@ -73,8 +74,21 @@ func (handler *chiJsonProductsHandlers) GetProductById(w http.ResponseWriter, r 
 
 func (handler *chiJsonProductsHandlers) PostProduct(w http.ResponseWriter, r *http.Request) {
 	p := dto.SaveProduct{}
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+	mediaType, err := contenttype.GetMediaType(r)
+	if err != nil {
 		helpers.JsonErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediaType.EqualsMIME(mtJson) {
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+			helpers.JsonErrorResponse(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else if mediaType.EqualsMIME(mtForm) || mediaType.EqualsMIME(mtMultiForm) {
+		p.Name = r.FormValue("name")
+		p.Description = r.FormValue("description")
+	} else {
+		helpers.JsonErrorResponse(w, unsupportedMediaTypeErr, http.StatusUnsupportedMediaType)
 		return
 	}
 	createdProduct, err := handler.productsService.SaveProduct(r.Context(), p)
@@ -103,14 +117,28 @@ func (handler *chiJsonProductsHandlers) DeleteProductById(w http.ResponseWriter,
 		helpers.JsonErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Del("Content-Type")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (handler *chiJsonProductsHandlers) PutProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	p := dto.UpdateProduct{Id: id}
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+	mediaType, err := contenttype.GetMediaType(r)
+	if err != nil {
 		helpers.JsonErrorResponse(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mediaType.EqualsMIME(mtJson) {
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+			helpers.JsonErrorResponse(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else if mediaType.EqualsMIME(mtForm) || mediaType.EqualsMIME(mtMultiForm) {
+		p.Name = r.FormValue("name")
+		p.Description = r.FormValue("description")
+	} else {
+		helpers.JsonErrorResponse(w, unsupportedMediaTypeErr, http.StatusUnsupportedMediaType)
 		return
 	}
 	updatedProduct, err := handler.productsService.UpdateProduct(r.Context(), p)

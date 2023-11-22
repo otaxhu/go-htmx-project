@@ -2,8 +2,9 @@ package chi
 
 import (
 	"context"
-	"embed"
 	"fmt"
+	"html/template"
+	"io/fs"
 	"net"
 	"net/http"
 
@@ -16,18 +17,21 @@ type chiApp struct {
 	server           *http.Server
 	productsService  service.ProductsService
 	productsHandlers handlers.ProductsHandlers
-	staticFS         embed.FS
+
+	staticFS  fs.FS
+	templates *template.Template
 
 	port    int
 	started bool
 }
 
-func NewChiApp(serverCfg config.Server, productsService service.ProductsService, staticFS embed.FS) *chiApp {
+func NewChiApp(serverCfg config.Server, productsService service.ProductsService, staticFS fs.FS, templates *template.Template) *chiApp {
 	app := &chiApp{
 		server:          &http.Server{},
 		productsService: productsService,
 		port:            serverCfg.Port,
 		staticFS:        staticFS,
+		templates:       templates,
 	}
 	return app
 }
@@ -37,7 +41,7 @@ func (app *chiApp) StartAndNotify(notifyChan chan struct{}) error {
 	if err != nil {
 		return err
 	}
-	app.productsHandlers = newChiProductsHandlers(app.productsService)
+	app.productsHandlers = newChiProductsHandlers(app.productsService, app.templates)
 	app.bindRoutesAndHandlers()
 	app.started = true
 	close(notifyChan)

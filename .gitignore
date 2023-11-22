@@ -7,6 +7,11 @@
 *.dll
 *.so
 *.dylib
+bin/
+
+# Static code and generated static code (CSS, TailwindCSS classes, images, icons, etc.)
+static/
+compiled-templates/
 
 # Test binary, built with `go test -c`
 *.test

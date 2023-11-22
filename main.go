@@ -4,11 +4,13 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"html/template"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/otaxhu/go-htmx-project/config"
 	"github.com/otaxhu/go-htmx-project/internal/repository"
 	"github.com/otaxhu/go-htmx-project/internal/service"
@@ -20,6 +22,9 @@ var envVarsFile []byte
 
 //go:embed static/*
 var staticFiles embed.FS
+
+//go:embed compiled-templates/*
+var templateFiles embed.FS
 
 func main() {
 	closeAppSignal := make(chan os.Signal, 1)
@@ -69,8 +74,14 @@ func main() {
 	// Services DI
 	productsService := service.NewProductsService(cfg.ProductsService, productsRepo)
 
+	// Templates DI
+	t, err := template.New("").Funcs(sprig.FuncMap()).ParseFS(templateFiles, "*/*.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Web Framework DI
-	webApp, err = web.NewWebApp(cfg.Server, productsService, staticFiles)
+	webApp, err = web.NewWebApp(cfg.Server, productsService, staticFiles, t)
 	if err != nil {
 		log.Fatal(err)
 	}
